@@ -1,0 +1,324 @@
+{
+  "name": "AI Document Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1d5eZAQm2fLJDnsgA5b2WmDaNzdeJ4WktsZemBlK8PeE",
+          "mode": "list",
+          "cachedResultName": "OCR",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d5eZAQm2fLJDnsgA5b2WmDaNzdeJ4WktsZemBlK8PeE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d5eZAQm2fLJDnsgA5b2WmDaNzdeJ4WktsZemBlK8PeE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $json.invoice_number }}",
+            "customer_name": "={{$json.customer_name}}",
+            "date": "={{$json.date}}",
+            "product": "={{$json.product}}",
+            "quantity": "={{$json.quantity}}",
+            "total": "={{$json.total}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product",
+              "displayName": "product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        -32
+      ],
+      "id": "baf963d2-abdf-4563-a0db-14c12c407eb8",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XWBiYeCFga59TOwJ",
+          "name": "Restaurant AI Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        32
+      ],
+      "id": "2e6c92e9-62e2-4b77-976c-3bcafbb38c64",
+      "name": "Webhook",
+      "webhookId": "eb91bacc-7c86-4ac3-9032-fd0cd2c3eb0c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/process-document",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        48
+      ],
+      "id": "fedf8594-7c62-4ee0-9cad-6b7992503e85",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $json.result;\n\n// Remove ```json and ``` if Gemini returned a code block\nconst cleanResult = result\n  .replace(/```json/g, '')\n  .replace(/```/g, '')\n  .trim();\n\n// Convert the string into real JSON\nconst data = JSON.parse(cleanResult);\n\nreturn [\n  {\n    json: {\n      filename: $json.filename,\n      invoice_number: data.invoice_number,\n      customer_name: data.customer_name,\n      date: data.date,\n      product: data.product,\n      quantity: data.quantity,\n      total: data.total\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        32
+      ],
+      "id": "b13cdacd-308d-4c1f-a911-ac8b14d4a431",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        -192
+      ],
+      "id": "b95a6acb-27bd-486b-ae30-a63c05dc541f",
+      "name": "Telegram Trigger",
+      "webhookId": "5ae135d1-1853-4573-a6fe-2cdb1e1f251f",
+      "credentials": {
+        "telegramApi": {
+          "id": "ueLjWqcQLJGGd9OA",
+          "name": "project_1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        -192
+      ],
+      "id": "7fe1b07f-bf67-4a0e-9a2f-086f0e3acdbc",
+      "name": "Get a file",
+      "webhookId": "a2db4a49-5406-4684-ad21-0ca1ad46421b",
+      "credentials": {
+        "telegramApi": {
+          "id": "ueLjWqcQLJGGd9OA",
+          "name": "project_1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/process-document",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": " data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        -128
+      ],
+      "id": "28677f04-3046-47b4-a377-2574b2385404",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5e8bb73f-32cd-4ae8-b713-29e8371379e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "587d8d2d9fbc97da6e3f279408e2dcd2f1ae4913b7cf411cff75deb3a01b31c9"
+  },
+  "nodeGroups": [],
+  "id": "N3Y25FMSeklSHUKD",
+  "tags": []
+}
